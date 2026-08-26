@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ML House Predictor</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-top: 5px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        button { flex: 1; padding: 10px; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-price { background-color: #007bff; }
+        .btn-class { background-color: #28a745; }
+        #result { margin-top: 20px; font-weight: bold; font-size: 18px; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <h2>House Value Predictor</h2>
+    
+    <label for="sqft">Square Feet:</label>
+    <input type="number" id="sqft" value="1800">
+
+    <label for="bedrooms">Bedrooms:</label>
+    <input type="number" id="bedrooms" value="3">
+
+    <label for="age">Property Age (Years):</label>
+    <input type="number" id="age" value="10">
+
+    <div class="btn-group">
+        <button class="btn-price" onclick="predict('price')">Predict Price</button>
+        <button class="btn-class" onclick="predict('category')">Predict Category</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script>
+        async function predict(type) {
+            const sqft = parseFloat(document.getElementById('sqft').value);
+            const bedrooms = parseInt(document.getElementById('bedrooms').value);
+            const age = parseFloat(document.getElementById('age').value);
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.innerText = "Predicting...";
+
+            // Determine which endpoint to hit based on the button clicked
+            const endpoint = type === 'price' ? '/predict/price' : '/predict/category';
+
+            try {
+                const response = await fetch(`http://127.0.0.1:8000${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ sqft, bedrooms, age })
+                });
+
+                const data = await response.json();
+                
+                if (type === 'price') {
+                    let formattedPrice = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(data.estimated_price);
+                    resultDiv.innerText = `Estimated Price: ${formattedPrice}`;
+                } else {
+                    resultDiv.innerText = `Category: ${data.category} (${data.confidence}% confidence)`;
+                }
+            } catch (error) {
+                resultDiv.innerText = "Error making prediction. Is backend running?";
+            }
+        }
+    </script>
+</body>
+</html>
